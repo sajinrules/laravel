@@ -46,6 +46,15 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Exception $exception)
     {
+        // This will replace our 404 response with
+        // a JSON response.
+        
+            return response()->json([
+                'error' => $exception->errorInfo,
+            ], 404);
+    
+
         return parent::render($request, $exception);
     }
+    
 }
