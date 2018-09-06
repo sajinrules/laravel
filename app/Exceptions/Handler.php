@@ -4,6 +4,7 @@ namespace App\Exceptions;
 
 use Exception;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Response;
 
 class Handler extends ExceptionHandler
 {
@@ -44,17 +45,52 @@ class Handler extends ExceptionHandler
      * @param  \Exception  $exception
      * @return \Illuminate\Http\Response
      */
-    public function render($request, Exception $exception)
+    public function render($request, Exception $e)
     {
-        // This will replace our 404 response with
-        // a JSON response.
-        
+        /*
             return response()->json([
-                'error' => $exception->errorInfo,
-            ], 404);
-    
+                'error' => [Array(
+                    'message' => 'Resource not found',
+                    'code' => Response::HTTP_NOT_FOUND
+                )]
+            ], Response::HTTP_NOT_FOUND);
+         
+        */
+        $err_code = 23000;$e->getCode();
+        
+        switch($err_code) {
+            case 23000:
+                $message = 'Phone number already exists';
+                break;
+            
+                default :
+                $message = 'Error occured';
+                break;    
+        }
+        
+        if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
+            return response()->json($this->handleError($e,'Resource not found', Response::HTTP_NOT_FOUND), Response::HTTP_NOT_FOUND);
+        
+        } elseif ($e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
+            return response()->json($this->handleError($e,'Endpoint not found', Response::HTTP_NOT_FOUND), Response::HTTP_NOT_FOUND);
+        
+        } else if($e instanceof \Illuminate\Validation\ValidationException) {
+            return response()->json($this->handleError($e,'Validation error', Response::HTTP_NOT_FOUND), Response::HTTP_NOT_FOUND);
+        }
+        
+        return response()->json($this->handleError($e, $message, Response::HTTP_BAD_REQUEST), Response::HTTP_BAD_REQUEST);
+        
+    }
 
-        return parent::render($request, $exception);
+    public function handleError($e, $msg, $code){
+        return [
+            'status' => 'ERROR',
+            'data' => [],
+            'errors' => [ Array(
+                'message' => $msg,
+                'code' => $code
+            )]
+        ];   
     }
     
 }

@@ -17,51 +17,43 @@ class ApiRegisterController extends RegisterController
      */
     public function register(Request $request)
     {
-        // $messages = [
-        //     'required'    => 'Mandatory field missing'
-        // ];
-        // $validator = Validator::make($input, $rules, $messages);
-        // return $validator;
-        // $errors = $this->validator($request->all())->errors();
-        // //return $errors;
-
-        // if(count($errors))
-        // {
-        //     return response(['errors' => $errors], 401);
-        // }
-
-        // event(new Registered($user = $this->create($request->all())));
-
-        // //this->guard()->login($user);
-
-        // return response(['user' => $user]);
-        // $validator = Validator::make($request->all(), [
-        //     'title' => 'required|unique:users',
-        //     'body' => 'required',
-        // ]);
+        $err_array = [];
         $rules = array(
-            'password' => 'required',
-            'phone_number' => 'required'
+            'phone_number' => 'required',
+            'password' => 'required'
         );    
         $messages = array(
-            'password.required' => 'Password is mandotory.',
-            'phone_number.required' => 'Phone number is mandotory'
+            'phone_number.required' => 'Phone number is mandotory',
+            'password.required' => 'Password is mandotory.'
         );
+        
         $validator = Validator::make( $request->all(), $rules, $messages );
-        return $validator->errors();
-        $err_array = $validator->errors();
+        
+        foreach ($validator->errors()->getMessages() as $key => $value) {
+            $arr = array(
+                "code" => 1001,
+                "message" => $value[0]
+            );
+            array_push($err_array,$arr);
+        }
 
         if ( $validator->fails() ) 
         {
             return [
                 'status' => "ERROR",
                 'data' => [], 
-                'errors' => [
-                    "0"=> $validator->errors(),
-                    "1"=> $validator->errors()
-                ]
+                'errors' => $err_array
             ];
         }
-        
+        event(new Registered($user = $this->create($request->all())));
+        return response($this->createResponse(['user' => $user]));
+    }
+
+    private function createResponse($payload) {
+        return [
+            'status' => 'SUCCESS',
+            'data' => $payload,
+            'errors' => []
+        ];
     }
 }
